@@ -1,0 +1,12 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "note",
+    srcs = [
+        "core.go",
+        "exec.go",
+        "utils.go",
+    ],
+    importpath = "github.com/honglu2875/note/note",
+    visibility = ["//visibility:public"],
+)

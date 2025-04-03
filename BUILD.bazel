@@ -1,0 +1,43 @@
+# gazelle:prefix github.com/honglu2875/note
+# gazelle:build_file_name BUILD.bazel
+load("@buildifier_prebuilt//:rules.bzl", "buildifier")
+load("@gazelle//:def.bzl", "gazelle", "gazelle_binary")
+load("@rules_go//go:def.bzl", "go_library")
+
+gazelle_binary(
+    name = "gazelle_bin",
+    languages = [
+        "@gazelle//language/go:go_default_library",
+        "@gazelle//language/proto:go_default_library",
+    ],
+)
+
+gazelle(
+    name = "gazelle",
+    gazelle = ":gazelle_bin",
+)
+
+buildifier(
+    name = "buildifier.check",
+    exclude_patterns = [
+        "./.git/*",
+    ],
+    lint_mode = "warn",
+    mode = "check",
+)
+
+buildifier(
+    name = "buildifier.format",
+    exclude_patterns = [
+        "./.git/*",
+    ],
+    lint_mode = "fix",
+    mode = "fix",
+    verbose = True,
+)
+
+go_library(
+    name = "note_lib",
+    importpath = "github.com/honglu2875/note",
+    visibility = ["//visibility:public"],
+)
