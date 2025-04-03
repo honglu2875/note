@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func openNote(path string, editor string) {
+func OpenNote(path string, editor string) {
 	cmd := exec.Command(editor, path)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -22,7 +22,7 @@ func openNote(path string, editor string) {
 	}
 }
 
-func createFastNote(basePath, name string) string {
+func CreateFastNote(basePath, name string) string {
 	timestamp := time.Now().Format("2006-01-02")
 	dir := filepath.Join(basePath, timestamp)
 	err := os.MkdirAll(dir, 0755)
@@ -32,7 +32,7 @@ func createFastNote(basePath, name string) string {
 	}
 
 	if name == "" {
-		name = generateRandomHash(5)
+		name = GenerateRandomHash(5)
 	}
 	fileName := name + ".md"
 	filePath := filepath.Join(dir, fileName)
@@ -49,7 +49,7 @@ func createFastNote(basePath, name string) string {
 	return filePath
 }
 
-func listNotes(basePath string) {
+func ListNotes(basePath string) {
 	err := filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err

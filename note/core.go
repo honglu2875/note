@@ -12,7 +12,7 @@ const (
 	DEFAULT_NOTE_NAME = "notes.md"
 )
 
-func getBasePath() string {
+func GetBasePath() string {
 	basePath := os.Getenv("NOTE_PATH")
 	if basePath == "" {
 		homeDir, err := os.UserHomeDir()
@@ -25,7 +25,7 @@ func getBasePath() string {
 	return basePath
 }
 
-func getEditor() string {
+func GetEditor() string {
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
 		editor = DefaultEditor
@@ -33,33 +33,6 @@ func getEditor() string {
 	return editor
 }
 
-func getPath(elem ...string) string {
+func GetPath(elem ...string) string {
 	return filepath.Join(elem...)
-}
-
-func main() {
-	basePath := getBasePath()
-	editor := getEditor()
-
-	if len(os.Args) == 1 {
-		// `note` along will open the default note.
-		openNote(getPath(basePath, DEFAULT_NOTE_NAME), editor)
-		return
-	}
-
-	switch os.Args[1] {
-	case "fast":
-		var path string
-		if len(os.Args) > 2 {
-			path = createFastNote(basePath, os.Args[2])
-		} else {
-			path = createFastNote(basePath, "")
-		}
-		openNote(path, editor)
-	case "list":
-		listNotes(basePath)
-	default:
-		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", os.Args[1])
-		os.Exit(1)
-	}
 }

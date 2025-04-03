@@ -8,12 +8,12 @@ import (
 )
 
 func main() {
-	basePath := note.getBasePath()
-	editor := note.getEditor()
+	basePath := note.GetBasePath()
+	editor := note.GetEditor()
 
 	if len(os.Args) == 1 {
 		// `note` along will open the default note.
-		note.openNote(note.getPath(basePath, note.DEFAULT_NOTE_NAME), editor)
+		note.OpenNote(note.GetPath(basePath, note.DEFAULT_NOTE_NAME), editor)
 		return
 	}
 
@@ -21,13 +21,13 @@ func main() {
 	case "fast":
 		var path string
 		if len(os.Args) > 2 {
-			path = note.createFastNote(basePath, os.Args[2])
+			path = note.CreateFastNote(basePath, os.Args[2])
 		} else {
-			path = note.createFastNote(basePath, "")
+			path = note.CreateFastNote(basePath, "")
 		}
-		note.openNote(path, editor)
+		note.OpenNote(path, editor)
 	case "list":
-		note.listNotes(basePath)
+		note.ListNotes(basePath)
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", os.Args[1])
 		os.Exit(1)

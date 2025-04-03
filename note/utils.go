@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func generateRandomHash(length int) string {
+func GenerateRandomHash(length int) string {
 	// Implement a simple random hash generator
 	// For simplicity, using a fixed string here
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
