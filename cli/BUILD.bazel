@@ -1,15 +1,15 @@
 load("@rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
-    name = "cmd_lib",
+    name = "cli_lib",
     srcs = ["main.go"],
-    importpath = "github.com/honglu2875/note/cmd",
+    importpath = "github.com/honglu2875/note/cli",
     visibility = ["//visibility:private"],
     deps = ["//note"],
 )
 
 go_binary(
-    name = "cmd",
-    embed = [":cmd_lib"],
+    name = "cli",
+    embed = [":cli_lib"],
     visibility = ["//visibility:public"],
 )
