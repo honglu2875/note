@@ -47,16 +47,22 @@ func main() {
 		},
 	}
 
-	fastCmd := &cobra.Command{
-		Use:   "fast [title]",
+	newCmd := &cobra.Command{
+		Use:   "new [title]",
 		Short: "Create and open a quick note",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			var path string
 			if len(args) > 2 {
-				path = CreateFastNote(basePath, args[2], output)
+				path = CreateNewNote(basePath, args[2], output)
 			} else {
-				path = CreateFastNote(basePath, "", output)
+				var name string
+				fmt.Print("Please provide a name (without .md extension): ")
+				fmt.Scan(&name)
+				if name == "" {
+					fmt.Println("Note: empty input leads to a random hash.")
+				}
+				path = CreateNewNote(basePath, name, output)
 			}
 			OpenNote(path, editor, output)
 		},
@@ -70,7 +76,7 @@ func main() {
 		},
 	}
 
-	rootCmd.AddCommand(fastCmd)
+	rootCmd.AddCommand(newCmd)
 	rootCmd.AddCommand(listCmd)
 
 	if err := rootCmd.Execute(); err != nil {

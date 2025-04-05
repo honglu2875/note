@@ -27,7 +27,7 @@ func OpenNote(path string, editor string, output *termenv.Output) {
 	}
 }
 
-func CreateFastNote(basePath, name string, output *termenv.Output) string {
+func CreateNewNote(basePath, name string, output *termenv.Output) string {
 	timestamp := time.Now().Format("2006-01-02")
 	dir := filepath.Join(basePath, timestamp)
 	err := os.MkdirAll(dir, 0755)
