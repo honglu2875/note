@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	DefaultBasePath   = "notes"
-	DefaultEditor     = "nvim"
+	DEFAULT_BASE_PATH = "notes"
+	DEFAULT_EDITOR    = "nvim"
 	DEFAULT_NOTE_NAME = "notes.md"
 )
 
@@ -20,7 +20,7 @@ func GetBasePath() string {
 			fmt.Fprintf(os.Stderr, "Failed to get home directory: %v\n", err)
 			os.Exit(1)
 		}
-		basePath = filepath.Join(homeDir, DefaultBasePath)
+		basePath = filepath.Join(homeDir, DEFAULT_BASE_PATH)
 	}
 	return basePath
 }
@@ -28,7 +28,7 @@ func GetBasePath() string {
 func GetEditor() string {
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
-		editor = DefaultEditor
+		editor = DEFAULT_EDITOR
 	}
 	return editor
 }

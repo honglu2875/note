@@ -2,10 +2,17 @@ load("@rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "cli_lib",
-    srcs = ["main.go"],
+    srcs = [
+        "exec.go",
+        "main.go",
+    ],
     importpath = "github.com/honglu2875/note/cli",
     visibility = ["//visibility:private"],
-    deps = ["//note"],
+    deps = [
+        "//note",
+        "@com_github_muesli_termenv//:termenv",
+        "@com_github_spf13_cobra//:cobra",
+    ],
 )
 
 go_binary(

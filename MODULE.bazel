@@ -5,3 +5,16 @@ bazel_dep(
     version = "6.4.0",
     dev_dependency = True,
 )
+
+go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.download(version = "1.24.1")
+
+go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
+go_deps.from_file(go_mod = "//:go.mod")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+use_repo(
+    go_deps,
+    "com_github_spf13_cobra",
+    "com_github_muesli_termenv",
+)
