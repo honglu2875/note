@@ -3,19 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/honglu2875/note/note"
 	"github.com/muesli/termenv"
 	"github.com/spf13/cobra"
 )
-
-func raiseIfError(err error) {
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-}
 
 func main() {
 	basePath := note.GetBasePath()
@@ -36,14 +30,12 @@ func main() {
 				raiseIfError(err)
 				id, err := strconv.Atoi(args[0])
 				raiseIfError(err)
-				if id >= len(nodes) {
-					fmt.Fprintf(os.Stderr, "id supplied is more than the notes collected. Need to be less than %d.\n", len(nodes))
-					os.Exit(1)
-				}
+				raiseIfIdOOB(id, len(nodes))
 				path = nodes[id].Path
 			}
 			editor := note.GetEditor()
-			OpenNote(path, editor, output)
+			err := OpenNote(path, editor, output)
+			raiseIfError(err)
 		},
 	}
 
@@ -52,19 +44,20 @@ func main() {
 		Short: "Create and open a quick note",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			var path string
-			if len(args) > 2 {
-				path = CreateNewNote(basePath, args[2], output)
+			var name string
+			if len(args) > 0 {
+				name = args[0]
 			} else {
-				var name string
 				fmt.Print("Please provide a name (without .md extension): ")
 				fmt.Scan(&name)
 				if name == "" {
 					fmt.Println("Note: empty input leads to a random hash.")
 				}
-				path = CreateNewNote(basePath, name, output)
 			}
-			OpenNote(path, editor, output)
+			path, err := CreateNewNote(basePath, name, output)
+			raiseIfError(err)
+			err = OpenNote(path, editor, output)
+			raiseIfError(err)
 		},
 	}
 
@@ -72,12 +65,55 @@ func main() {
 		Use:   "list",
 		Short: "List all notes",
 		Run: func(cmd *cobra.Command, args []string) {
-			ListNotes(basePath, output)
+			err := ListNotes(basePath, output)
+			raiseIfError(err)
+		},
+	}
+
+	renameCmd := &cobra.Command{
+		Use:   "rename [id] [newName]",
+		Short: "Rename the note",
+		Args:  cobra.MatchAll(cobra.ExactArgs(2), cobra.OnlyValidArgs),
+		Run: func(cmd *cobra.Command, args []string) {
+			idStr := args[0]
+			newName := maybeAddSuffix(args[1])
+			id, err := strconv.Atoi(idStr)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "The first argument needs to be an id according to the result of `note list`: %v\n", err)
+			}
+			nodes, err := note.BuildTree(basePath)
+			raiseIfError(err)
+			raiseIfIdOOB(id, len(nodes))
+			path := nodes[id].Path
+			dir, _ := filepath.Split(path)
+			newPath := filepath.Join(dir, newName)
+			err = RenameNote(nodes[id].Path, newPath, output)
+			raiseIfError(err)
+		},
+	}
+
+	removeCmd := &cobra.Command{
+		Use:   "rm [id]",
+		Short: "Remove the note",
+		Args:  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
+		Run: func(cmd *cobra.Command, args []string) {
+			idStr := args[0]
+			id, err := strconv.Atoi(idStr)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "The first argument needs to be an id according to the result of `note list`: %v\n", err)
+			}
+			nodes, err := note.BuildTree(basePath)
+			raiseIfError(err)
+			raiseIfIdOOB(id, len(nodes))
+			err = RemoveNote(nodes[id].Path, output)
+			raiseIfError(err)
 		},
 	}
 
 	rootCmd.AddCommand(newCmd)
 	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(renameCmd)
+	rootCmd.AddCommand(removeCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
