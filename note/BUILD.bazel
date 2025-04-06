@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "core.go",
         "files.go",
+        "git.go",
         "utils.go",
     ],
     importpath = "github.com/honglu2875/note/note",

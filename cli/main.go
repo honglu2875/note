@@ -110,10 +110,35 @@ func main() {
 		},
 	}
 
+	initCmd := &cobra.Command{
+		Use:   "init",
+		Short: "Initialize the base folder",
+		Args:  cobra.ExactArgs(0),
+		Run: func(cmd *cobra.Command, args []string) {
+			isGit, err := note.CheckGitRepo(basePath)
+			raiseIfError(err)
+			if isGit {
+				fmt.Printf("%s\n", color("The base folder is already a git repo.", 9))
+				os.Exit(0)
+			}
+
+			var ret string
+			fmt.Printf("It will initialize a git repo on the folder %s. Okay to continue? (y/N): ", color(basePath, 75))
+			fmt.Scanf("%s", &ret)
+			if ret == "y" || ret == "Y" {
+				err = note.InitGitRepo(basePath)
+				raiseIfError(err)
+				err = note.CommitChanges(basePath, "initial commit")
+				raiseIfError(err)
+			}
+		},
+	}
+
 	rootCmd.AddCommand(newCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(renameCmd)
 	rootCmd.AddCommand(removeCmd)
+	rootCmd.AddCommand(initCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

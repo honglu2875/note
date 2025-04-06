@@ -28,6 +28,10 @@ func OpenNote(path string, editor string, output *termenv.Output) error {
 	return nil
 }
 
+func color(msg string, num int) termenv.Style {
+	return termenv.String(msg).Foreground(termenv.ANSI256Color(num))
+}
+
 func RenameNote(path string, newName string, output *termenv.Output) error {
 	if err := os.Rename(path, newName); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to rename %s to %s.", path, newName))
@@ -36,6 +40,19 @@ func RenameNote(path string, newName string, output *termenv.Output) error {
 }
 
 func RemoveNote(path string, output *termenv.Output) error {
+
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return errors.Wrap(err, fmt.Sprintf("The file %s does not exist.", path))
+	}
+
+	dir, _ := filepath.Split(path)
+	if isGit, err := note.CheckGitRepo(dir); !isGit || (err != nil) {
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("The directory %s is not a git repo. %s", dir, color("Please call `note init`.", 75))
+	}
+
 	var ret string
 	fmt.Printf("Are you sure to delete %s (y/N):", path)
 	fmt.Scanf("%s", &ret)
@@ -46,10 +63,24 @@ func RemoveNote(path string, output *termenv.Output) error {
 		}
 
 	}
+
+	err := note.CommitChanges(dir, fmt.Sprintf("remove %s", path))
+	if err != nil {
+		return note.StashChanges(dir, "")
+	}
 	return nil
 }
 
 func CreateNewNote(basePath, name string, output *termenv.Output) (string, error) {
+
+	if isDir, err := note.CheckBasePath(basePath); !isDir || err != nil {
+		return "", errors.Wrap(err, fmt.Sprintf("The directory %s does not exist.", basePath))
+	}
+
+	if isGit, err := note.CheckGitRepo(basePath); !isGit || (err != nil) {
+		fmt.Fprintf(os.Stderr, "%s%s\n", color("Warning: the base dir is not a git repo.", 202), color(" Please call `note init`.", 75))
+	}
+
 	timestamp := time.Now().Format("2006-01-02")
 	dir := filepath.Join(basePath, timestamp)
 	err := os.MkdirAll(dir, 0755)
