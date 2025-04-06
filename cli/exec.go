@@ -28,15 +28,19 @@ func OpenNote(path string, editor string, output *termenv.Output) error {
 	return nil
 }
 
-func color(msg string, num int) termenv.Style {
-	return termenv.String(msg).Foreground(termenv.ANSI256Color(num))
-}
-
 func RenameNote(path string, newName string, output *termenv.Output) error {
 	if err := os.Rename(path, newName); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to rename %s to %s.", path, newName))
 	}
 	return nil
+}
+
+func getBaseAndVerify(path string) string {
+	basePath := note.GetBasePath()
+	if _, err := filepath.Rel(basePath, path); err != nil {
+		panic(color(fmt.Sprintf("Called path (%s) is not inside the base path (%s). THIS SHOULD NOT HAPPEN.", path, basePath), 1))
+	}
+	return basePath
 }
 
 func RemoveNote(path string, output *termenv.Output) error {
@@ -45,12 +49,13 @@ func RemoveNote(path string, output *termenv.Output) error {
 		return errors.Wrap(err, fmt.Sprintf("The file %s does not exist.", path))
 	}
 
-	dir, _ := filepath.Split(path)
-	if isGit, err := note.CheckGitRepo(dir); !isGit || (err != nil) {
+	gitBase := getBaseAndVerify(path)
+
+	if isGit, err := note.CheckGitRepo(gitBase); !isGit || (err != nil) {
 		if err != nil {
 			return err
 		}
-		return fmt.Errorf("The directory %s is not a git repo. %s", dir, color("Please call `note init`.", 75))
+		return fmt.Errorf("The directory %s is not a git repo. %s", gitBase, color("Please call `note init`.", 75))
 	}
 
 	var ret string
@@ -64,9 +69,15 @@ func RemoveNote(path string, output *termenv.Output) error {
 
 	}
 
-	err := note.CommitChanges(dir, fmt.Sprintf("remove %s", path))
+	_, _ = removeEmptyFirstLevelFolders(gitBase)
+
+	err := note.CommitChanges(gitBase, fmt.Sprintf("remove %s", path))
 	if err != nil {
-		return note.StashChanges(dir, "")
+		stash_err := note.StashChanges(gitBase, "")
+		if stash_err != nil {
+			return errors.Wrap(err, fmt.Sprintf("%v\n", stash_err))
+		}
+		return err
 	}
 	return nil
 }
@@ -77,7 +88,9 @@ func CreateNewNote(basePath, name string, output *termenv.Output) (string, error
 		return "", errors.Wrap(err, fmt.Sprintf("The directory %s does not exist.", basePath))
 	}
 
-	if isGit, err := note.CheckGitRepo(basePath); !isGit || (err != nil) {
+	gitBase := getBaseAndVerify(basePath)
+
+	if isGit, err := note.CheckGitRepo(gitBase); !isGit || (err != nil) {
 		fmt.Fprintf(os.Stderr, "%s%s\n", color("Warning: the base dir is not a git repo.", 202), color(" Please call `note init`.", 75))
 	}
 
@@ -102,10 +115,22 @@ func CreateNewNote(basePath, name string, output *termenv.Output) (string, error
 
 	fmt.Printf("Created new note: %s\n", filePath)
 
+	err = note.CommitChanges(gitBase, fmt.Sprintf("create %s", filePath))
+	if err != nil {
+		stash_err := note.StashChanges(gitBase, "")
+		if stash_err != nil {
+			return filePath, errors.Wrap(err, fmt.Sprintf("%v\n", stash_err))
+		}
+		return filePath, err
+	}
+
 	return filePath, nil
 }
 
 func ListNotes(basePath string, output *termenv.Output) error {
+	if isGit, err := note.CheckGitRepo(basePath); !isGit || (err != nil) {
+		fmt.Fprintf(os.Stderr, "%s%s\n", color("Warning: the base dir is not a git repo.", 202), color(" Please call `note init`.", 75))
+	}
 
 	nodes, err := note.BuildTree(basePath)
 

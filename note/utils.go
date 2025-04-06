@@ -7,6 +7,15 @@ import (
 	"os"
 )
 
+func isDigit(s string) bool {
+	for _, v := range s {
+		if v < '0' || v > '9' {
+			return false
+		}
+	}
+	return true
+}
+
 func GenerateRandomHash(length int) string {
 	// Implement a simple random hash generator
 	// For simplicity, using a fixed string here

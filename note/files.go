@@ -28,7 +28,7 @@ func BuildTree(basePath string) ([]*FileNode, error) {
 
 	all_nodes = append(all_nodes, root)
 
-	err := filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error {
+	err := filepath.WalkDir(basePath, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -39,8 +39,13 @@ func BuildTree(basePath string) ([]*FileNode, error) {
 		}
 
 		// Only include markdown files and directories
-		if !info.IsDir() && !strings.HasSuffix(path, ".md") {
+		if !d.IsDir() && !strings.HasSuffix(path, ".md") {
 			return nil
+		}
+
+		_, last := filepath.Split(path)
+		if d.IsDir() && !isDigit(last[:1]) {
+			return filepath.SkipDir
 		}
 
 		// Get relative path from the base
@@ -52,23 +57,26 @@ func BuildTree(basePath string) ([]*FileNode, error) {
 		// Split path into components
 		parts := strings.Split(relPath, string(os.PathSeparator))
 
+		if len(parts) > 2 {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
 		// Add to the tree (max 2 levels deep)
 		currentNode := root
-		for i, part := range parts {
-			if i >= 2 { // Limit to 2 levels deep (excluding root)
-				break
-			}
-
+		for _, part := range parts {
 			if _, exists := currentNode.Children[part]; !exists {
 				new_node := &FileNode{
 					Name:     part,
 					Path:     filepath.Join(currentNode.Path, part),
-					IsDir:    i < len(parts)-1 || info.IsDir(),
+					IsDir:    d.IsDir(),
 					Children: make(map[string]*FileNode),
 					Id:       counter,
 				}
 				currentNode.Children[part] = new_node
-				if !info.IsDir() {
+				if !d.IsDir() {
 					counter++
 					all_nodes = append(all_nodes, new_node)
 				}
